@@ -1,6 +1,8 @@
 use futures::prelude::*;
-use redis_async::client::connect::RespConnection;
-use redis_async::{client, resp_array};
+use redis_async::{
+    client::{self, connect::RespConnection},
+    resp_array,
+};
 use std::error::Error;
 
 async fn get_connection(port: u16) -> Result<RespConnection, std::io::Error> {
