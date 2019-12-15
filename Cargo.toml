@@ -1,0 +1,11 @@
+[package]
+name = "redis-mon-demo"
+version = "0.1.0"
+authors = ["michael-grunder <michael.grunder@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+futures = "0.3.1"
+tokio = { version = "0.2.4", features = ["rt-core", "macros"] }
+async-std = "1.2.0"
+redis-async = "0.6.1"
