@@ -12,30 +12,19 @@ async fn get_connection(port: u16) -> Result<RespConnection, std::io::Error> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let port1 = std::env::args()
-        .nth(1)
-        .unwrap_or_else(|| "6379".to_string())
-        .parse()
-        .unwrap();
-
-    let port2 = std::env::args()
-        .nth(2)
-        .unwrap_or_else(|| "6379".to_string())
-        .parse()
-        .unwrap();
-
-    let mut c1 = get_connection(port1).await?;
+    let mut c1 = get_connection(6379).await?;
     c1.send(resp_array!["MONITOR"]).await?;
 
-    let mut c2 = get_connection(port2).await?;
+    let mut c2 = get_connection(6379).await?;
     c2.send(resp_array!["MONITOR"]).await?;
 
     // Skip the "OK" response for each "MONITOR" command
-    let mut skip1 = c1.skip(1);
-    let mut skip2 = c2.skip(1);
+    let mut c1 = c1.skip(1);
+    let mut c2 = c2.skip(1);
 
-    // Simple enough to wait on one stream of replies
-    while let Some(reply) = skip1.next().await {
+    // This works to monitor the connection `c1` but how could I monitor both
+    // `c1` and `c2` as data became available on either stream?
+    while let Some(reply) = c1.next().await {
         println!("Reply: {:?}", reply);
     }
 
