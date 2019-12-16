@@ -1,4 +1,4 @@
-use futures::prelude::*;
+use futures::{prelude::*, stream::SelectAll};
 use redis_async::{
     client::{self, connect::RespConnection},
     resp_array,
@@ -12,20 +12,19 @@ async fn get_connection(port: u16) -> Result<RespConnection, std::io::Error> {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let mut c1 = get_connection(6379).await?;
-    c1.send(resp_array!["MONITOR"]).await?;
+    let args = std::env::args().skip(1).collect::<Vec<_>>();
 
-    let mut c2 = get_connection(6379).await?;
-    c2.send(resp_array!["MONITOR"]).await?;
+    let mut connections = SelectAll::new();
 
-    // Skip the "OK" response for each "MONITOR" command
-    let mut c1 = c1.skip(1);
-    let mut c2 = c2.skip(1);
+    for arg in &args {
+        let mut con = get_connection(arg.parse().unwrap()).await?;
+        con.send(resp_array!["MONITOR"]).await?;
+        let con = con.skip(1);
+        connections.push(con);
+    }
 
-    // This works to monitor the connection `c1` but how could I monitor both
-    // `c1` and `c2` as data became available on either stream?
-    while let Some(reply) = c1.next().await {
-        println!("Reply: {:?}", reply);
+    while let Some(v) = connections.next().await {
+        println!("{:?}", v);
     }
 
     Ok(())
